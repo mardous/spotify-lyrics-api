@@ -15,9 +15,9 @@ use ParagonIE\ConstantTime\Encoding;
 
 class Spotify
  {
-    private $token_url = 'https://open.spotify.com/get_access_token';
+    private $token_url = 'https://open.spotify.com/api/token';
     private $lyrics_url = 'https://spclient.wg.spotify.com/color-lyrics/v2/track/';
-    private $server_time_url = 'https://open.spotify.com/server-time';
+    private $server_time_url = 'https://open.spotify.com/api/server-time';
     private $sp_dc;
     private $cache_file;
 
