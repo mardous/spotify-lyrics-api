@@ -34,7 +34,7 @@ function make_response($spotify, $response, $format)
 
     if ($json_res === null || !isset($json_res['lyrics'])) {
         http_response_code(404);
-        return json_encode(['error' => true, 'message' => 'lyrics for this track is not available on spotify!']);
+        return json_encode(['error' => true, 'message' => 'lyrics for this track is not available on spotify!', 'raw_response' => $response]);
     }
     $lines = $format == 'lrc' ? $spotify->getLrcLyrics($json_res['lyrics']['lines']) : $json_res['lyrics']['lines'];
     if ($format == 'lrc') {
