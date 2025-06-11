@@ -256,12 +256,16 @@ class Spotify
         }
         $token = $tokens['lyrics']['accessToken'];
 
-        $formated_url = $this->lyrics_url . $track_id . '?format=json&market=from_token';
+        $formated_url = $this->lyrics_url . $track_id;
         $ch = curl_init();
         curl_setopt( $ch, CURLOPT_CUSTOMREQUEST, 'GET' );
         curl_setopt( $ch, CURLOPT_HTTPHEADER, array(
             'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0',
             'App-platform: WebPlayer',
+            'Spotify-App-Version: 1.2.65.255.g85e641b4',
+            'Referer: https://open.spotify.com/',
+            'Origin: https://open.spotify.com/',
+            'Accept: application/json'
             "authorization: Bearer $token"
         ) );
         curl_setopt( $ch, CURLOPT_RETURNTRANSFER, TRUE );
