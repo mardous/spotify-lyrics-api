@@ -197,8 +197,6 @@ class Spotify
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Accept: application/json',
-            'Content-Type: application/json',
             "Authorization: Bearer $token"
         ]);
 
@@ -218,17 +216,7 @@ class Spotify
                 'raw_response' => $response
             ]);
         }
-
-        $json = json_decode($response, true);
-        if (!isset($json['tracks']['items'])) {
-            return json_encode(['error' => true, 'message' => 'No tracks found', 'code' => $http_code]);
-        }
-
-        $filtered = array();
-        foreach ($json['tracks']['items'] as $track) {
-            $filtered[] = ['name' => $track['name'], 'id' => $track['id']];
-        }
-        return json_encode(['tracks' => ['items' => $filtered]]);
+        return $response;
     }
 
 
