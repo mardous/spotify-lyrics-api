@@ -20,7 +20,7 @@ if (!$query) {
 }
 
 $spotify = new SpotifyLyricsApi\Spotify(getenv('SP_DC'));
-$spotify->checkTokenExpire();
+$spotify->checkTokenExpire('search');
 
 try {
     $results = $spotify->searchTrack($query, $limit);

@@ -81,7 +81,7 @@ class Spotify
     * @return array The parameters for the token request.
     * @throws SpotifyException If there is an error fetching the server time.
     */
-    function getServerTimeParams(): array {
+    function getServerTimeParams(string $reason, string $product_type): array {
         try {
             $ch = curl_init();
             curl_setopt( $ch, CURLOPT_URL, $this->server_time_url );
@@ -102,8 +102,8 @@ class Spotify
 
             $timestamp = time();
             $params = [
-                'reason' => 'transport',
-                'productType' => 'web-player',
+                'reason' => $reason,
+                'productType' => $product_type,
                 'totp' => $totp,
                 'totpVer' => '5',
                 'ts' => strval( $timestamp ),
@@ -124,12 +124,12 @@ class Spotify
     *
     * @throws SpotifyException If there is an error during the token request.
     */
-    function getToken(): void {
+    function getToken(string $token_type, string $reason, string $product_type): void {
         if ( !$this->sp_dc ) {
             throw new SpotifyException( 'Please set SP_DC as an environmental variable.' );
         }
         try {
-            $params = $this->getServerTimeParams();
+            $params = $this->getServerTimeParams($reason, $product_type);
             $headers = [
                 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0',
                 'Cookie: sp_dc=' . $this->sp_dc
@@ -154,9 +154,13 @@ class Spotify
             if ( !$token_json || ( isset( $token_json[ 'isAnonymous' ] ) && $token_json[ 'isAnonymous' ] ) ) {
                 throw new SpotifyException( 'The SP_DC set seems to be invalid, please correct it!' );
             }
-            $token_file = fopen( $this->cache_file, 'w' ) or die( 'Unable to open file!' );
-            fwrite( $token_file, $result );
-            fclose( $token_file );
+
+            $tokens = [];
+            if (file_exists($this->cache_file)) {
+                $tokens = json_decode(file_get_contents($this->cache_file), true) ?? [];
+            }
+            $tokens[$token_type] = $token_json;
+            file_put_contents($this->cache_file, json_encode($tokens));
         } catch ( Exception $e ) {
             throw new SpotifyException( $e->getMessage() );
         }
@@ -169,16 +173,28 @@ class Spotify
     * Checks if the access token is expired and retrieves a new one if it is.
     * The function invokes getToken if the token is expired or the cache file is not found.
     */
-    function checkTokenExpire(): void
-    {
-        $check = file_exists( $this->cache_file );
-        if ( $check ) {
-            $json = file_get_contents( $this->cache_file );
-            $timeleft = json_decode( $json, true )[ 'accessTokenExpirationTimestampMs' ];
-            $timenow = round( microtime( true ) * 1000 );
+    function checkTokenExpire($token_type): void {
+        $reason = 'transport';
+        $product_type = 'web-player';
+        if ($token_type === 'search') {
+            $reason = 'init';
+            $product_type = 'mobile-web-player';
         }
-        if ( !$check || $timeleft < $timenow ) {
-            $this->getToken();
+        if (!file_exists($this->cache_file)) {
+            $this->getToken($token_type, $reason, $product_type);
+            return;
+        }
+        $tokens = json_decode(file_get_contents($this->cache_file), true);
+        if (!isset($tokens[$token_type])) {
+            $this->getToken($token_type, $reason, $product_type);
+            return;
+        }
+        $tokenData = $tokens[$token_type];
+        $timeleft = $tokenData['accessTokenExpirationTimestampMs'] ?? 0;
+        $timenow = round(microtime(true) * 1000);
+
+        if ($timeleft < $timenow) {
+            $this->getToken($token_type, $reason, $product_type);
         }
     }
 
@@ -191,7 +207,11 @@ class Spotify
         ]);
 
         $json = file_get_contents( $this->cache_file );
-        $token = json_decode( $json, true )[ 'accessToken' ];
+        $tokens = json_decode($json, true);
+        if (!isset($tokens['search']['accessToken'])) {
+            throw new \Exception('search token not found');
+        }
+        $token = $tokens['search']['accessToken'];
 
         $url = $this->search_url . '?' . $params;
         $ch = curl_init();
@@ -235,7 +255,12 @@ class Spotify
     function getLyrics( $track_id ): string 
     {
         $json = file_get_contents( $this->cache_file );
-        $token = json_decode( $json, true )[ 'accessToken' ];
+        $tokens = json_decode($json, true);
+        if (!isset($tokens['lyrics']['accessToken'])) {
+            throw new \Exception('lyrics token not found');
+        }
+        $token = $tokens['lyrics']['accessToken'];
+
         $formated_url = $this->lyrics_url . $track_id . '?format=json&market=from_token';
         $ch = curl_init();
         curl_setopt( $ch, CURLOPT_CUSTOMREQUEST, 'GET' );
