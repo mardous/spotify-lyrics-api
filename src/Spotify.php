@@ -193,7 +193,7 @@ class Spotify
         $json = file_get_contents( $this->cache_file );
         $token = json_decode( $json, true )[ 'accessToken' ];
 
-        $url = $search_url . '?' . $params;
+        $url = $this->search_url . '?' . $params;
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
