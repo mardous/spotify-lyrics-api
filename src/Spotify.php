@@ -194,7 +194,9 @@ class Spotify
         $token = json_decode( $json, true )[ 'accessToken' ];
 
         $url = $this->search_url . '?' . $params;
-        $ch = curl_init($url);
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             "Authorization: Bearer $token"
