@@ -203,15 +203,25 @@ class Spotify
         ]);
 
         $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         if (curl_errno($ch)) {
             curl_close($ch);
             throw new \Exception('cURL error: ' . curl_error($ch));
         }
         curl_close($ch);
 
+        if ($http_code !== 200) {
+            return json_encode([
+                'error' => true,
+                'message' => 'Spotify API error',
+                'status' => $http_code,
+                'raw_response' => $response
+            ]);
+        }
+
         $json = json_decode($response, true);
         if (!isset($json['tracks']['items'])) {
-            return json_encode(['error' => true, 'message' => 'No tracks found']);
+            return json_encode(['error' => true, 'message' => 'No tracks found', 'code' => $http_code]);
         }
 
         $filtered = array();
