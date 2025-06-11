@@ -265,7 +265,7 @@ class Spotify
             'Spotify-App-Version: 1.2.65.255.g85e641b4',
             'Referer: https://open.spotify.com/',
             'Origin: https://open.spotify.com/',
-            'Accept: application/json'
+            'Accept: application/json',
             "authorization: Bearer $token"
         ) );
         curl_setopt( $ch, CURLOPT_RETURNTRANSFER, TRUE );
