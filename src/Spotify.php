@@ -16,6 +16,7 @@ use ParagonIE\ConstantTime\Encoding;
 class Spotify
  {
     private $token_url = 'https://open.spotify.com/api/token';
+    private $search_url = 'https://api.spotify.com/v1/search';
     private $lyrics_url = 'https://spclient.wg.spotify.com/color-lyrics/v2/track/';
     private $server_time_url = 'https://open.spotify.com/api/server-time';
     private $sp_dc;
@@ -180,6 +181,46 @@ class Spotify
             $this->getToken();
         }
     }
+
+    public function searchTrack(string $query, int $limit): string
+    {
+        $params = http_build_query([
+            'q' => $query,
+            'type' => 'track',
+            'limit' => $limit
+        ]);
+
+        $json = file_get_contents( $this->cache_file );
+        $token = json_decode( $json, true )[ 'accessToken' ];
+
+        $url = $search_url . '?' . $params;
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Accept: application/json',
+            'Content-Type: application/json',
+            "Authorization: Bearer $token"
+        ]);
+
+        $response = curl_exec($ch);
+        if (curl_errno($ch)) {
+            curl_close($ch);
+            throw new \Exception('cURL error: ' . curl_error($ch));
+        }
+        curl_close($ch);
+
+        $json = json_decode($response, true);
+        if (!isset($json['tracks']['items'])) {
+            return json_encode(['error' => true, 'message' => 'No tracks found']);
+        }
+
+        $filtered = array();
+        foreach ($json['tracks']['items'] as $track) {
+            $filtered[] = ['name' => $track['name'], 'id' => $track['id']];
+        }
+        return json_encode(['tracks' => ['items' => $filtered]]);
+    }
+
 
     /**
     * Retrieves the lyrics of a track from the Spotify.
