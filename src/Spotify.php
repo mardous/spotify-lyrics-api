@@ -230,11 +230,6 @@ class Spotify
         }
         curl_close($ch);
 
-        error_log("=== [searchTrack] ===");
-        error_log("Query: $query");
-        error_log("URL: $url");
-        error_log("Token (start): " . substr($token, 0, 15) . '...');
-
         if ($http_code !== 200) {
             return json_encode([
                 'error' => true,
